@@ -6,15 +6,17 @@
     <title>伊登 12 色相環 - 水彩混色互動教學網</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Microsoft JhengHei", sans-serif; }
-        body { display: flex; flex-direction: column; height: 100vh; background: #f0f2f5; color: #333; }
+        body { display: flex; flex-direction: column; height: 100vh; background: #f0f2f5; color: #333; overflow: hidden; }
         
-        header { background: #ffffff; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; }
+        header { background: #ffffff; padding: 15px 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; position: relative; height: 60px; display: flex; justify-content: center; align-items: center; }
         header h1 { font-size: 22px; color: #222; font-weight: 600; letter-spacing: 1px; }
+        .back-btn { position: absolute; left: 20px; padding: 8px 16px; background: #909399; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; display: none; }
 
-        /* 橫式主區塊 */
-        .main-container { display: flex; flex: 1; height: calc(100vh - 60px); overflow: hidden; }
-        
-        /* 左側：伊登 12 色相環 */
+        /* 橫式主容器：寬度 200vw 用來包容左右兩個畫面切換 */
+        .stage-container { display: flex; width: 200vw; flex: 1; transition: transform 0.5s ease-in-out; }
+        .page { width: 100vw; height: 100%; display: flex; }
+
+        /* ==================== 畫面一：色相環主頁面 ==================== */
         .left-panel { flex: 1.4; display: flex; justify-content: center; align-items: center; background: #ffffff; position: relative; padding: 20px; }
         
         /* 繪製精確的 12 色相環 */
@@ -23,7 +25,6 @@
             width: 100%; 
             height: 100%; 
             border-radius: 50%; 
-            /* 依據標準伊登 12 色相環顏色順序，每 30 度一色 */
             background: conic-gradient(
                 #FFFF00 0deg 30deg,    /* 黃 */
                 #FFB300 30deg 60deg,   /* 黃橙 */
@@ -42,7 +43,6 @@
             transition: transform 2.5s cubic-bezier(0.22, 1, 0.36, 1);
             position: relative;
         }
-        /* 色相環內圈白洞，使其變成「環狀」 */
         .color-wheel::after {
             content: '';
             position: absolute;
@@ -50,7 +50,6 @@
             background: #ffffff;
             border-radius: 50%;
         }
-        /* 色相環中心指標線 */
         .pointer {
             position: absolute;
             top: -10px; width: 6px; height: 30px;
@@ -59,7 +58,7 @@
             z-index: 10;
         }
         
-        /* 右側：控制面板 */
+        /* 右側面板 */
         .right-panel { flex: 1; padding: 40px; display: flex; flex-direction: column; gap: 24px; background: #fafafa; border-left: 1px solid #e8e8e8; box-shadow: inset 10px 0 20px rgba(0,0,0,0.02); }
         .control-card { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 16px; }
         
@@ -69,14 +68,12 @@
         select { padding: 12px; font-size: 15px; border-radius: 8px; border: 1px solid #dcdfe6; background-color: #fff; outline: none; transition: border 0.2s; cursor: pointer; }
         select:focus { border-color: #409eff; }
         
-        .mix-btn { padding: 14px; font-size: 16px; border-radius: 8px; border: none; background: #409eff; color: white; font-weight: bold; cursor: pointer; transition: background 0.2s; letter-spacing: 1px; margin-top: 10px; }
+        .mix-btn { padding: 14px; font-size: 16px; border-radius: 8px; border: none; background: #409eff; color: white; font-weight: bold; cursor: pointer; transition: background 0.2s; letter-spacing: 1px; }
         .mix-btn:hover { background: #66b1ff; }
         
-        /* 混色結果呈現區 */
-        .result-container { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 10px; padding: 20px; background: #fdfdfd; border: 1px linear-gradient; border-radius: 12px; border: 1px dashed #dcdfe6; }
+        .result-container { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 10px; padding: 20px; background: #fdfdfd; border-radius: 12px; border: 1px dashed #dcdfe6; }
         .result-text { font-size: 16px; font-weight: bold; color: #444; }
         
-        /* 水彩渲染效果模擬 */
         .watercolor-preview {
             width: 100px; height: 100px;
             border-radius: 50%;
@@ -84,7 +81,7 @@
             box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
             transition: all 0.8s ease;
             opacity: 0;
-            filter: blur(1px); /* 微糊模擬水彩紙張滲透 */
+            filter: blur(1px);
         }
         .watercolor-preview.show {
             opacity: 1;
@@ -93,125 +90,95 @@
 
         .advanced-btn { background: #67c23a; margin-top: auto; padding: 14px; font-size: 16px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; }
         .advanced-btn:hover { background: #85ce61; }
+
+        /* ==================== 畫面二：進階相機分析面 ==================== */
+        .cam-left { flex: 1.4; background: #1a1a1a; display: flex; justify-content: center; align-items: center; position: relative; padding: 20px; }
+        .video-box { width: 100%; max-width: 500px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: #2c2c2c; }
+        
+        /* 畫面中心的瞄準準心 */
+        .crosshair { position: absolute; width: 30px; height: 30px; border: 2px solid #ff3b30; border-radius: 50%; pointer-events: none; }
+        .crosshair::before, .crosshair::after { content: ''; position: absolute; background: #ff3b30; }
+        .crosshair::before { top: 14px; left: -5px; width: 40px; height: 2px; }
+        .crosshair::after { left: 14px; top: -5px; width: 2px; height: 40px; }
+        
+        .cam-right { flex: 1; padding: 40px; display: flex; flex-direction: column; gap: 24px; background: #fafafa; border-left: 1px solid #e8e8e8; }
+        .action-btn { padding: 14px; font-size: 16px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; text-align: center; margin-bottom: 10px; }
+        .btn-blue { background: #007aff; } .btn-blue:hover { background: #3594ff; }
+        .btn-red { background: #ff3b30; } .btn-red:hover { background: #ff6057; }
+        
+        #hiddenCanvas { display: none; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🎨 伊登 12 色相環 - 水彩混色互動教學</h1>
+        <button class="back-btn" id="backBtn" onclick="switchPage(0)">← 返回色相環</button>
+        <h1 id="mainTitle">🎨 伊登 12 色相環 - 水彩混色互動教學</h1>
     </header>
 
-    <div class="main-container">
-        <div class="left-panel">
-            <div class="pointer"></div>
-            <div class="color-wheel-wrapper">
-                <div class="color-wheel" id="wheel"></div>
-            </div>
-        </div>
+    <div class="stage-container" id="stage">
         
-        <div class="right-panel">
-            <div class="control-card">
-                <div class="select-group">
-                    <label>🎨 選擇第一種色彩：</label>
-                    <select id="color1">
-                        <option value="0">1. 黃色 (Yellow)</option>
-                        <option value="1">2. 黃橙色 (Yellow-Orange)</option>
-                        <option value="2">3. 橙色 (Orange)</option>
-                        <option value="3">4. 紅橙色 (Red-Orange)</option>
-                        <option value="4">5. 紅色 (Red)</option>
-                        <option value="5">6. 紅紫色 (Red-Violet)</option>
-                        <option value="6">7. 紫色 (Violet)</option>
-                        <option value="7">8. 藍紫色 (Blue-Violet)</option>
-                        <option value="8">9. 藍色 (Blue)</option>
-                        <option value="9">10. 藍綠色 (Blue-Green)</option>
-                        <option value="10">11. 綠色 (Green)</option>
-                        <option value="11">112. 黃綠色 (Yellow-Green)</option>
-                    </select>
+        <div class="page">
+            <div class="left-panel">
+                <div class="pointer"></div>
+                <div class="color-wheel-wrapper">
+                    <div class="color-wheel" id="wheel"></div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="control-card">
+                    <div class="select-group">
+                        <label>🎨 選擇第一種色彩：</label>
+                        <select id="color1">
+                            <option value="0">1. 黃色 (Yellow)</option>
+                            <option value="1">2. 黃橙色 (Yellow-Orange)</option>
+                            <option value="2">3. 橙色 (Orange)</option>
+                            <option value="3">4. 紅橙色 (Red-Orange)</option>
+                            <option value="4">5. 紅色 (Red)</option>
+                            <option value="5">6. 紅紫色 (Red-Violet)</option>
+                            <option value="6">7. 紫色 (Violet)</option>
+                            <option value="7">8. 藍紫色 (Blue-Violet)</option>
+                            <option value="8">9. 藍色 (Blue)</option>
+                            <option value="9">10. 藍綠色 (Blue-Green)</option>
+                            <option value="10">11. 綠色 (Green)</option>
+                            <option value="11">12. 黃綠色 (Yellow-Green)</option>
+                        </select>
+                    </div>
+
+                    <div class="select-group">
+                        <label>🎨 選擇第二種色彩：</label>
+                        <select id="color2">
+                            <option value="0">1. 黃色 (Yellow)</option>
+                            <option value="1">2. 黃橙色 (Yellow-Orange)</option>
+                            <option value="2">3. 橙色 (Orange)</option>
+                            <option value="3">4. 紅橙色 (Red-Orange)</option>
+                            <option value="4">5. 紅色 (Red)</option>
+                            <option value="5">6. 紅紫色 (Red-Violet)</option>
+                            <option value="6">7. 紫色 (Violet)</option>
+                            <option value="7">8. 藍紫色 (Blue-Violet)</option>
+                            <option value="8" selected>9. 藍色 (Blue)</option> 
+                        </select>
+                    </div>
+
+                    <button class="mix-btn" onclick="mixColors()">🔥 開始混色 (色相環旋轉)</button>
                 </div>
 
-                <div class="select-group">
-                    <label>🎨 選擇第二種色彩：</label>
-                    <select id="color2">
-                        <option value="0">1. 黃色 (Yellow)</option>
-                        <option value="1">2. 黃橙色 (Yellow-Orange)</option>
-                        <option value="2">3. 橙色 (Orange)</option>
-                        <option value="3">4. 紅橙色 (Red-Orange)</option>
-                        <option value="4">5. 紅色 (Red)</option>
-                        <option value="5">6. 紅紫色 (Red-Violet)</option>
-                        <option value="6">7. 紫色 (Violet)</option>
-                        <option value="7">8. 藍紫色 (Blue-Violet)</option>
-                        <option value="8" selected>9. 藍色 (Blue)</option> </select>
+                <div class="result-container">
+                    <div class="result-text" id="resultLabel">請選擇顏色並點擊混色</div>
+                    <div class="watercolor-preview" id="colorResult"></div>
                 </div>
 
-                <button class="mix-btn" onclick="mixColors()">🔥 開始混色 (色相環旋轉)</button>
+                <button class="advanced-btn" onclick="switchPage(1)">🔬 進階選項：相機拍攝混色分析</button>
             </div>
-
-            <div class="result-container">
-                <div class="result-text" id="resultLabel">請選擇顏色並點擊混色</div>
-                <div class="watercolor-preview" id="colorResult"></div>
-            </div>
-
-            <button class="advanced-btn" onclick="alert('🚀 即將開啟第二畫面：啟動手機/電腦鏡頭進行 AI 水彩色彩逆向拆解分析！')">🔬 進階選項：相機拍攝混色分析</button>
         </div>
-    </div>
 
-    <script>
-        // 定義伊登 12 色相環的精確顏色資料 (順時針，每 30 度一個顏色)
-        const colorList = [
-            { name: "黃色 (Yellow)", hex: "#FFFF00" },
-            { name: "黃橙色 (Yellow-Orange)", hex: "#FFB300" },
-            { name: "橙色 (Orange)", hex: "#FF6F00" },
-            { name: "紅橙色 (Red-Orange)", hex: "#FF3D00" },
-            { name: "紅色 (Red)", hex: "#D50000" },
-            { name: "紅紫色 (Red-Violet)", hex: "#C51162" },
-            { name: "紫色 (Violet)", hex: "#AA00FF" },
-            { name: "藍紫色 (Blue-Violet)", hex: "#6200EA" },
-            { name: "藍色 (Blue)", hex: "#2962FF" },
-            { name: "藍綠色 (Blue-Green)", hex: "#00B8D4" },
-            { name: "綠色 (Green)", hex: "#00C853" },
-            { name: "黃綠色 (Yellow-Green)", hex: "#AEEA00" }
-        ];
-
-        let currentRotation = 0; // 記錄目前色相環轉到的總角度
-
-        function mixColors() {
-            const wheel = document.getElementById('wheel');
-            const resultLabel = document.getElementById('resultLabel');
-            const colorResult = document.getElementById('colorResult');
-            
-            const idx1 = parseInt(document.getElementById('color1').value);
-            const idx2 = parseInt(document.getElementById('color2').value);
-            
-            // 隱藏前一次的結果色塊，做重新淡入動效
-            colorResult.classList.remove('show');
-            resultLabel.innerText = "🧪 正在神奇旋轉調色中...";
-
-            // 1. 計算旋轉：每次點擊都在原本基礎上多轉 3~4 圈 (1080~1440度)，隨機增加動態感
-            const randomSpin = 1080 + Math.floor(Math.random() * 360);
-            currentRotation += randomSpin;
-            wheel.style.transform = `rotate(${currentRotation}deg)`;
-
-            // 2. 混色演算法（計算色相環上的最短路徑中間值）
-            let diff = Math.abs(idx1 - idx2);
-            let mixedIdx;
-
-            if (diff <= 6) {
-                // 一般情況，直接取兩者算術平均數
-                mixedIdx = Math.round((idx1 + idx2) / 2);
-            } else {
-                // 跨越圓圈邊界（例如黃色0 與 黃綠11）取最短路徑平均
-                mixedIdx = Math.round((idx1 + idx2 + 12) / 2) % 12;
-            }
-
-            const finalColor = colorList[mixedIdx];
-
-            // 3. 等待旋轉動畫結束 (2.5秒) 後顯示結果
-            setTimeout(() => {
-                resultLabel.innerText = `✨ 混色結果：${finalColor.name}`;
-                colorResult.style.background = finalColor.hex;
-                colorResult.classList.add('show');
-            }, 2500);
-        }
-    </script>
-</body>
-</html>
+        <div class="page">
+            <div class="cam-left">
+                <video id="video" class="video-box" autoplay playsinline></video>
+                <div class="crosshair"></div>
+            </div>
+            <div class="cam-right">
+                <div class="control-card">
+                    <h3>📷 AI 水彩色彩逆向拆解</h3>
+                    <p style="font-size: 14px; color: #666; margin: 5px 0 15px
