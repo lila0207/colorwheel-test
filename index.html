@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>互動版：伊登12色相環 - 水彩混色教學網</title>
+  <style>
+    :root {
+      --bg-color: #f4f7f6;
+      --panel-bg: #ffffff;
+      --text-color: #333333;
+      --accent-color: #4a90e2;
+    }
+    body {
+      font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 15px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      width: 100%;
+      max-width: 450px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    h1 { margin: 0; font-size: 22px; color: #2c3e50; }
+    .nav-btn {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background 0.3s;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      width: 100%;
+    }
+    .nav-btn:hover { background: #357abd; }
+    
+    /* 核心修正：手機版預設為純直式一條龍排版 */
+    .container {
+      display: flex;
+      flex-direction: column; 
+      width: 100%;
+      max-width: 450px; /* 限制手機版寬度，防止橫向溢出 */
+      background: var(--panel-bg);
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+    
+    .left-panel {
+      width: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px 10px 10px 10px;
+      border-bottom: 2px dashed #eeeeee; /* 分隔線改為橫線，置於色環下方 */
+    }
+    
+    #wheel-wrapper {
+      transition: transform 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+      border-radius: 50%;
+      width: 100%;
+      max-width: 380px; /* 控制色環在手機上的大小 */
+      display: flex;
+      justify-content: center;
+    }
+    #wheel-canvas {
+      cursor: crosshair;
+      width: 100%;
+      height: auto;
+    }
+    .spinning {
+      transform: rotate(720deg);
+    }
+    
+    .right-panel {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* 選色狀態顯示區 */
+    .selection-board {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      border: 1px solid #e0e0e0;
+    }
+    .selection-title {
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #2c3e50;
+      text-align: center;
+    }
+    .selected-colors-container {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .color-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .color-circle {
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      border: 2px dashed #ccc;
+      background-color: transparent;
+      margin-bottom: 8px;
+      transition: all 0.3s;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .color-circle.filled {
+      border: 3px solid #fff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .plus-sign {
+      font-size: 24px;
+      color: #999;
+      font-weight: bold;
+    }
+
+    .option-group { margin-bottom: 20px; }
+    label { display: block; font-weight: bold; margin-bottom: 8px; color: #34495e; }
+    select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 16px;
+      background-color: #fafafa;
+      box-sizing: border-box;
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .mix-btn {
+      flex: 2;
+      background: #e67e22;
+      color: white;
+      border: none;
+      padding: 15px 10px;
+      font-size: 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    .mix-btn:disabled {
+      background: #bdc3c7;
+      cursor: not-allowed;
+    }
+    .mix-btn:not(:disabled):hover { background: #d35400; }
+    
+    .reset-btn {
+      flex: 1;
+      background: #95a5a6;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    .reset-btn:hover { background: #7f8c8d; }
+
+    #result-box {
+      margin-top: 25px;
+      padding: 15px;
+      border-radius: 10px;
+      background: #ebf5fb;
+      text-align: center;
+      display: none;
+      border: 1px solid #d6eaf8;
+    }
+    #result-swatch {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin: 10px auto;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.1), 0 5px 15px rgba(0,0,0,0.15);
+      border: 4px solid white;
+    }
+    
+    /* 進階相機區手機版排版 */
+    #advanced-view { 
+      display: none; 
+      width: 100%; 
+      padding: 20px 15px; 
+      flex-direction: column; 
+      align-items: center; 
+      box-sizing: border-box; 
+    }
+    .camera-container { position: relative; width: 100%; border: 2px dashed #ccc; border-radius: 10px; overflow: hidden; text-align: center; background: #000; }
+    #video-feed, #photo-canvas { width: 100%; height: auto; display: block; }
+    #photo-canvas { cursor: crosshair; }
+    .analysis-result { margin-top: 20px; padding: 15px; background: #eef2f5; border-radius: 10px; width: 100%; box-sizing: border-box; text-align: center; font-size: 16px; }
+
+    /* 當螢幕寬度大於 768px (電腦螢幕) 時，才還原成左右雙欄排版 */
+    @media (min-width: 768px) {
+      header { flex-direction: row; text-align: left; max-width: 1100px; }
+      .nav-btn { width: auto; }
+      .container { flex-direction: row; max-width: 1100px; }
+      .left-panel { width: 50%; border-right: 2px dashed #eeeeee; border-bottom: none; padding: 20px; }
+      #wheel-wrapper { max-width: 420px; }
+      .right-panel { width: 50%; padding: 30px; }
+      #advanced-view { max-width: 1100px; padding: 30px; }
+      .analysis-result { width: 80%; font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🎨 伊登12色相環 - 直覺選色實驗室</h1>
+    <button class="nav-btn" onclick="toggleView()">切換至：進階相機測色解密</button>
+  </header>
+
+  <div class="container" id="main-container">
+    
+    <!-- 基礎視圖：色相環區 (手機版在上方) -->
+    <div class="left-panel" id="basic-left">
+      <h3 style="margin-top:0; color:#e74c3c; font-size: 16px; text-align: center;">👆 請直接點擊下方色環選擇兩種顏色</h3>
+      <div id="wheel-wrapper">
+        <canvas id="wheel-canvas" width="420" height="420"></canvas>
+      </div>
+    </div>
+
+    <!-- 基礎視圖：選項與結果區 (手機版在色相環正下方) -->
+    <div class="right-panel" id="basic-right">
+      <div class="selection-board">
+        <div class="selection-title">目前的調色盤狀態</div>
+        <div class="selected-colors-container">
+          <div class="color-slot">
+            <div class="color-circle" id="slot-1"></div>
+            <span id="name-1" style="font-size: 13px; color: #7f8c8d;">尚未選擇</span>
+          </div>
+          <div class="plus-sign">+</div>
+          <div class="color-slot">
+            <div class="color-circle" id="slot-2"></div>
+            <span id="name-2" style="font-size: 13px; color: #7f8c8d;">尚未選擇</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="option-group">
+        <label for="mode">💧 選擇水彩水分與調和比例：</label>
+        <select id="mode">
+          <option value="equal">等量調和 (1 : 1) - 標準色彩</option>
+          <option value="heavy1">主色偏重 (2 : 1) - 傾向第一種色</option>
+          <option value="watery">多水渲染 - 透明水彩淡化效果</option>
+        </select>
+      </div>
+
+      <div class="btn-group">
+        <button class="mix-btn" id="mix-btn" onclick="startMixing()" disabled>🚫 請先選滿兩種顏色</button>
+        <button class="reset-btn" onclick="resetSelection()">🔄 重置</button>
+      </div>
+
+      <div id="result-box">
+        <div id="result-text" style="font-weight: bold; font-size: 17px; color: #2980b9;"></div>
+        <div id="result-swatch"></div>
+        <div id="result-desc" style="font-size: 14px; color: #34495e; line-height: 1.5; padding: 0 5px;"></div>
+      </div>
+    </div>
+
+    <!-- 進階相機視圖 (手機版也是直式排版) -->
+    <div id="advanced-view">
+      <h2 style="margin-top:0; font-size: 20px;">🔍 現實色彩反推儀：這是怎麼調出來的？</h2>
+      <p style="color: #666; margin-top:-5px; font-size: 14px;">開啟後置相機或上傳圖片，點擊畫面即可分析色彩配方！</p>
+      <div style="margin-bottom: 15px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%;">
+        <button onclick="startCamera()" style="padding: 10px 15px; cursor: pointer; border-radius: 5px; border: 1px solid #ccc; background: #fff; flex: 1;">📷 開啟相機</button>
+        <button onclick="takeSnapshot()" style="padding: 10px 15px; cursor: pointer; border-radius: 5px; border: 1px solid #ccc; background: #fff; flex: 1;">📸 拍照定格</button>
+        <input type="file" id="file-input" accept="image/*" style="width: 100%; margin-top: 5px;">
+      </div>
+      <div class="camera-container">
+        <video id="video-feed" autoplay playsinline style="display:none;"></video>
+        <canvas id="photo-canvas" width="600" height="400"></canvas>
+      </div>
+      <div class="analysis-result" id="analysis-text">請點擊上方畫面中的任何位置進行色彩分析。</div>
+    </div>
+  </div>
+
+  <script>
+    const ittenColors = [
+      { name: "黃色 (一級)", rgb: [255, 235, 59], hex: "#FFEB3B" },
+      { name: "黃橙 (三級)", rgb: [255, 193, 7], hex: "#FFC107" },
+      { name: "橙色 (二級)", rgb: [255, 152, 0], hex: "#FF9800" },
+      { name: "紅橙 (三級)", rgb: [255, 87, 34], hex: "#FF5722" },
+      { name: "紅色 (一級)", rgb: [244, 67, 54], hex: "#F44336" },
+      { name: "紅紫 (三級)", rgb: [233, 30, 99], hex: "#E91E63" },
+      { name: "紫色 (二級)", rgb: [156, 39, 176], hex: "#9C27B0" },
+      { name: "藍紫 (三級)", rgb: [103, 58, 183], hex: "#673AB7" },
+      { name: "藍色 (一級)", rgb: [33, 150, 243], hex: "#2196F3" },
+      { name: "藍綠 (三級)", rgb: [0, 188, 212], hex: "#00BCD4" },
+      { name: "綠色 (二級)", rgb: [76, 175, 80], hex: "#4CAF50" },
+      { name: "黃綠 (三級)", rgb: [139, 195, 74], hex: "#8BC34A" }
+    ];
+
+    const canvas = document.getElementById('wheel-canvas');
+    const ctx = canvas.getContext('2d');
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const outerRadius = 180;
+    const innerRadius = 70; 
+    
+    let selectedIndices = [];
+
+    function drawWheel() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const arcSize = (2 * Math.PI) / 12;
+
+      ittenColors.forEach((color, i) => {
+        const startAngle = i * arcSize - arcSize / 2 - Math.PI / 2; 
+        const endAngle = (i + 1) * arcSize - arcSize / 2 - Math.PI / 2;
+        
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        
+        let currentOuterRadius = outerRadius;
+        if (selectedIndices.includes(i)) {
+          currentOuterRadius = outerRadius + 15;
+        }
+
+        ctx.arc(centerX, centerY, currentOuterRadius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = color.hex;
+        ctx.fill();
+        
+        ctx.strokeStyle = selectedIndices.includes(i) ? "#2c3e50" : "#ffffff";
+        ctx.lineWidth = selectedIndices.includes(i) ? 4 : 2;
+        ctx.stroke();
+      });
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.strokeStyle = "#fff";
+      ctx.stroke();
+      
+      ctx.fillStyle = "#95a5a6";
+      ctx.font = "14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("點擊外圈", centerX, centerY - 8);
+      ctx.fillText("選擇顏色", centerX, centerY + 12);
+    }
+
+    drawWheel();
+
+    canvas.addEventListener('click', function(event) {
+      if (document.getElementById('wheel-wrapper').classList.contains('spinning')) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      
+      const x = (event.clientX - rect.left) * scaleX - centerX;
+      const y = (event.clientY - rect.top) * scaleY - centerY;
+      
+      const distance = Math.sqrt(x * x + y * y);
+      
+      if (distance >= innerRadius && distance <= outerRadius + 15) {
+        let angle = Math.atan2(y, x) + Math.PI / 2;
+        if (angle < 0) angle += 2 * Math.PI;
+        
+        const segmentAngle = (2 * Math.PI) / 12;
+        let index = Math.round(angle / segmentAngle) % 12;
+        
+        handleColorSelection(index);
+      }
+    });
+
+    function handleColorSelection(index) {
+      document.getElementById('result-box').style.display = 'none';
+      const existPos = selectedIndices.indexOf(index);
+      
+      if (existPos !== -1) {
+        selectedIndices.splice(existPos, 1);
+      } else {
+        if (selectedIndices.length < 2) {
+          selectedIndices.push(index);
+        } else {
+          selectedIndices.shift();
+          selectedIndices.push(index);
+        }
+      }
+      updateSelectionUI();
+      drawWheel();
+    }
+
+    function updateSelectionUI() {
+      const slot1 = document.getElementById('slot-1');
+      const name1 = document.getElementById('name-1');
+      const slot2 = document.getElementById('slot-2');
+      const name2 = document.getElementById('name-2');
+      const mixBtn = document.getElementById('mix-btn');
+
+      if (selectedIndices.length >= 1) {
+        const c1 = ittenColors[selectedIndices[0]];
+        slot1.style.backgroundColor = c1.hex;
+        slot1.classList.add('filled');
+        name1.innerText = c1.name;
+        name1.style.color = "#2c3e50";
+        name1.style.fontWeight = "bold";
+      } else {
+        slot1.style.backgroundColor = "transparent";
+        slot1.classList.remove('filled');
+        name1.innerText = "尚未選擇";
+        name1.style.color = "#7f8c8d";
+        name1.style.fontWeight = "normal";
+      }
+
+      if (selectedIndices.length === 2) {
+        const c2 = ittenColors[selectedIndices[1]];
+        slot2.style.backgroundColor = c2.hex;
+        slot2.classList.add('filled');
+        name2.innerText = c2.name;
+        name2.style.color = "#2c3e50";
+        name2.style.fontWeight = "bold";
+        
+        mixBtn.disabled = false;
+        mixBtn.innerText = "🌀 開始旋轉混色！";
+        mixBtn.style.animation = "pulse 1.5s infinite";
+      } else {
+        slot2.style.backgroundColor = "transparent";
+        slot2.classList.remove('filled');
+        name2.innerText = "尚未選擇";
+        name2.style.color = "#7f8c8d";
+        name2.style.fontWeight = "normal";
+        
+        mixBtn.disabled = true;
+        mixBtn.innerText = "🚫 請先選滿兩種顏色";
+        mixBtn.style.animation = "none";
+      }
+    }
+
+    function resetSelection() {
+      selectedIndices = [];
+      updateSelectionUI();
+      drawWheel();
+      document.getElementById('result-box').style.display = 'none';
+    }
+
+    function startMixing() {
+      if (selectedIndices.length !== 2) return;
+
+      const wrapper = document.getElementById('wheel-wrapper');
+      wrapper.classList.add('spinning');
+      document.getElementById('result-box').style.display = 'none';
+
+      setTimeout(() => {
+        wrapper.classList.remove('spinning');
+        showResult();
+      }, 1500);
+    }
+
+    function showResult() {
+      const idx1 = selectedIndices[0];
+      const idx2 = selectedIndices[1];
+      const mode = document.getElementById('mode').value;
+
+      const col1 = ittenColors[idx1].rgb;
+      const col2 = ittenColors[idx2].rgb;
+
+      let r, g, b;
+      if (mode === 'equal') {
+        r = Math.round((col1[0] + col2[0]) / 2);
+        g = Math.round((col1[1] + col2[1]) / 2);
+        b = Math.round((col1[2] + col2[2]) / 2);
+      } else if (mode === 'heavy1') {
+        r = Math.round((col1[0] * 2 + col2[0]) / 3);
+        g = Math.round((col1[1] * 2 + col2[1]) / 3);
+        b = Math.round((col1[2] * 2 + col2[2]) / 3);
+      } else { 
+        r = Math.round((col1[0] + col2[0] + 255 * 2) / 4);
+        g = Math.round((col1[1] + col2[1] + 255 * 2) / 4);
+        b = Math.round((col1[2] + col2[2] + 255 * 2) / 4);
+      }
+
+      const resHex = `rgb(${r}, ${g}, ${b})`;
+      document.getElementById('result-swatch').style.backgroundColor = resHex;
+      
+      const n1 = ittenColors[idx1].name.split(' ')[0];
+      const n2 = ittenColors[idx2].name.split(' ')[0];
+      document.getElementById('result-text').innerText = `混色配方：${n1} + ${n2}`;
+      
+      const diff = Math.min(Math.abs(idx1 - idx2), 12 - Math.abs(idx1 - idx2));
+      let relation = "這兩種顏色混合產生了豐富的水彩層次，你可以試著在畫紙上重現它！";
+      
+      if (diff === 6) {
+        relation = "🌟 這是「互補色」混合！(在色環上成 180 度對立)。\n互補色相混會互相抵消彩度，調出沉穩的灰色或深灰褐色，是畫陰影和暗部的絕佳配方！";
+      } else if (diff === 1) {
+        relation = "🎨 這是「類似色」混合！(在色環上相鄰)。\n顏色非常協調自然，混色過程不易變髒，非常適合表現光影的平滑漸層。";
+      } else if (diff === 4) {
+         relation = "📐 這是「對比色」混合！(在色環上呈 120 度三角形)。\n色彩對比強烈，混合後會產生視覺衝擊力較強的中間色調。";
+      }
+      
+      document.getElementById('result-desc').innerText = relation;
+      document.getElementById('result-box').style.display = 'block';
+      
+      document.getElementById('result-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.7); }
+        70% { box-shadow: 0 0 0 15px rgba(230, 126, 34, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    let isAdvanced = false;
+    function toggleView() {
+      isAdvanced = !isAdvanced;
+      if(!isAdvanced) {
+        stopCameraStream();
+      }
+      document.getElementById('basic-left').style.display = isAdvanced ? 'none' : 'flex';
+      document.getElementById('basic-right').style.display = isAdvanced ? 'none' : 'flex';
+      document.getElementById('advanced-view').style.display = isAdvanced ? 'flex' : 'none';
+      document.querySelector('.nav-btn').innerText = isAdvanced ? '返回：基礎混色實驗室' : '切換至：進階相機測色解密';
+    }
+
+    const video = document.getElementById('video-feed');
+    const photoCanvas = document.getElementById('photo-canvas');
+    const photoCtx = photoCanvas.getContext('2d');
+
+    photoCtx.fillStyle = "#333";
+    photoCtx.fillRect(0, 0, photoCanvas.width, photoCanvas.height);
+    photoCtx.fillStyle = "#fff";
+    photoCtx.font = "18px sans-serif";
+    photoCtx.textAlign = "center";
+    photoCtx.fillText("請點擊上方按鈕開啟相機或上傳照片", photoCanvas.width / 2, 200);
+
+    // 強制調用後置鏡頭環境
+    function startCamera() {
+      video.style.display = 'block';
+      photoCanvas.style.display = 'none';
+      
+      const constraints = {
+        video: { facingMode: "environment" }
+      };
+
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then(stream => { video.srcObject = stream; })
+        .catch(err => { 
+          console.error(err);
+          alert("無法開啟後置相機，請確認瀏覽器權限，或改用圖片上傳！"); 
+        });
+    }
+
+    function stopCameraStream() {
+      const stream = video.srcObject;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
+    }
+
+    function takeSnapshot() {
+      if (video.style.display !== 'none') {
+        photoCanvas.style.display = 'block';
+        photoCtx.drawImage(video, 0, 0, photoCanvas.width, photoCanvas.height);
+        video.style.display = 'none';
+        stopCameraStream();
+      }
+    }
+
+    document.getElementById('file-input').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const img = new Image();
+          img.onload = function() {
+            photoCanvas.style.display = 'block';
+            video.style.display = 'none';
+            stopCameraStream();
+            
+            const ratio = Math.min(photoCanvas.width / img.width, photoCanvas.height / img.height);
+            const w = img.width * ratio;
+            const h = img.height * ratio;
+            const x = (photoCanvas.width - w) / 2;
+            const y = (photoCanvas.height - h) / 2;
+            photoCtx.clearRect(0,0,photoCanvas.width,photoCanvas.height);
+            photoCtx.drawImage(img, x, y, w, h);
+          }
+          img.src = event.target.result;
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+
+    photoCanvas.addEventListener('click', function(e) {
+      if (!isAdvanced) return;
+      const rect = photoCanvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (photoCanvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (photoCanvas.height / rect.height);
+      const pixel = photoCtx.getImageData(x, y, 1, 1).data;
+      analyzePixelColor(pixel[0], pixel[1], pixel[2]);
+    });
+
+    function analyzePixelColor(r, g, b) {
+      let bestMatch = "";
+      let minDistance = Infinity;
+
+      for (let i = 0; i < ittenColors.length; i++) {
+        for (let j = i; j < ittenColors.length; j++) {
+          const c1 = ittenColors[i].rgb;
+          const c2 = ittenColors[j].rgb;
+          const mixR = (c1[0] + c2[0]) / 2;
+          const mixG = (c1[1] + c2[1]) / 2;
+          const mixB = (c1[2] + c2[2]) / 2;
+
+          const dist = Math.sqrt(Math.pow(r - mixR, 2) + Math.pow(g - mixG, 2) + Math.pow(b - mixB, 2));
+          if (dist < minDistance) {
+            minDistance = dist;
+            if (i === j) {
+              bestMatch = `極度接近伊登色環中的 **${ittenColors[i].name}**！`;
+            } else {
+              bestMatch = `這可以嘗試用 **${ittenColors[i].name.split(' ')[0]}** 與 **${ittenColors[j].name.split(' ')[0]}** 約 1:1 調配出來！`;
+            }
+          }
+        }
+      }
+      
+      document.getElementById('analysis-text').innerHTML = 
+        `<div style="display:inline-block;width:30px;height:30px;background:rgb(${r},${g},${b});vertical-align:middle;border:2px solid #ccc;border-radius:5px;margin-right:15px;box-shadow:0 2px 5px rgba(0,0,0,0.2);"></div>` +
+        `<span style="color:#2c3e50;font-size:18px;">💡 ${bestMatch}</span>`;
+    }
+  </script>
+</body>
+</html>
